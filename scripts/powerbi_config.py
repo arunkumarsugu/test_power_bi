@@ -8,3 +8,5 @@ env=""  # provide environment
 
 Base_dir = f"/Users/username/Folder/{accountname}"  #BaseDIR , change username and folder
 Date_range = 90
+period = ""  # mention the range period example : January
+campaign_id = ""

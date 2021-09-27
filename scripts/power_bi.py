@@ -25,9 +25,22 @@ def get_authorization_token(user, password, env):
     return access_token
 
 
-reports = {
-    "/generate/survey/statistics/report": "surveystatistics"
-}
+reports = {"/generate/survey/results/report": "surveyresults",
+           "/generate/reviews/management/report": "reviewsmanagement",
+           "/generate/survey/statistics/report": "surveystatistics",
+           "/generate/hierarchy/details/report": "hierarchydetails",
+           "/generate/publish/history/report": "publishistory",
+           "/generate/verified/users/report": "verifiedusers",
+           "/generate/nps/trend/report": "npstrend",
+           "/generate/sms/delivery/statistics/report": "smsdelivery",
+           "/survey/email/delivery/status/report": "surveyemail"}
+
+reports_with_no_data = {"/generate/tier/ranking/report": "tierranking",
+                        "/generate/incomplete/surveys/report": "incompletesurvey"}
+
+reports_with_error = {"/generate/nps/report": "npsreport",
+                      "/generate/digest/report": "digest",
+                      "/generate/account/statistics/report": "accountstatistics"}
 
 
 def get_date_range(date):
@@ -50,6 +63,38 @@ def convert_data_into_file(data, report):
     if report in "surveystatistics":
         df = pd.DataFrame.from_dict(data)
         df.to_csv(file_path)
+    elif report in "surveyresults":
+        survey_results = data.get("survey_results")
+        df = pd.DataFrame.from_dict(survey_results)
+        df.to_csv(file_path)
+    elif report in "reviewsmanagement":
+        review_management = data.get("reviews_management_tier_details")
+        df = pd.DataFrame.from_dict(review_management)
+        df.to_csv(file_path)
+    elif report in "publishistory":
+        publish_history = data.get("agent_details")
+        df = pd.DataFrame.from_dict(publish_history)
+        df.to_csv(file_path)
+    elif report in "hierarchydetails":
+        hierarchy_details = data.get("hierarchy_user_details")
+        df = pd.DataFrame.from_dict(hierarchy_details)
+        df.to_csv(file_path)
+    elif report in "verifiedusers":
+        verified_users = data.get("verified_user_details")
+        df = pd.DataFrame.from_dict(verified_users)
+        df.to_csv(file_path)
+    elif report in "npstrend":
+        test_tier = data.get("loading test-Tier")
+        df = pd.DataFrame.from_dict(test_tier)
+        df.to_csv(file_path)
+    elif report in "smsdelivery":
+        test_tier = data.get("sms_delivery_statistics")
+        df = pd.DataFrame.from_dict(test_tier)
+        df.to_csv(file_path)
+    elif report in "surveyemail":
+        test_tier = data.get("survey_delivery_statistics")
+        df = pd.DataFrame.from_dict(test_tier)
+        df.to_csv(file_path)
 
 
 def get_reports_api(env):
@@ -69,7 +114,40 @@ def get_data():
         for k, v in reports.items():
             URL = f"{base_url}{k}"
             if v in ("surveystatistics", "surveyresults", "reviewsmanagement"):
-                par = {"account_id": powerbi_config.account_id, "report_format": "json", "range_period": json.dumps(period)}
+                par = {"account_id": powerbi_config.account_id, "report_format": "json",
+                       "range_period": json.dumps(period)}
+            elif v in "hierarchydetails":
+                par = {"report_name": "Hierarchy Details", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json",
+                       "period": powerbi_config.period}
+            elif v in "publishistory":
+                par = {"report_name": "Publish History", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json",
+                       "tier_data": [{"label": "All Tier", "value": powerbi_config.account_id}]}
+            elif v in "verifiedusers":
+                par = {"report_name": "Publish History", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json",
+                       "tier_data": [{"label": "All Tier", "value": powerbi_config.account_id}]}
+            elif v in "npstrend":
+                par = {"report_name": "NPS Trend Report", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json",
+                       "period": powerbi_config.period}
+            elif v in "smsdelivery":
+                par = {"report_name": "SMS Delivery Statistics", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json", "range_period": json.dumps(period),
+                       "campaign_id": powerbi_config.campaign_id, "reports": "hierarchy",
+                       "tier_data": [{"label": "All Tier", "value": powerbi_config.account_id}]}
+            elif v in "surveyemail":
+                par = {"report_name": "Survey Email Delivery Status Report", "account_id": powerbi_config.account_id,
+                       "account_name": powerbi_config.accountname,
+                       "action": "Download", "report_format": "json", "range_period": json.dumps(period),
+                       "campaign_id": powerbi_config.campaign_id, "reports": "hierarchy",
+                       "tier_data": [{"label": "All Tier", "value": powerbi_config.account_id}]}
             data = requests.get(url=URL, params=par, headers={"Authorization": access_token})
             data_json = data.json()
             convert_data_into_file(data_json, v)
