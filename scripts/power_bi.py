@@ -33,13 +33,12 @@ reports = {"/generate/survey/results/report": "surveyresults",
            "/generate/verified/users/report": "verifiedusers",
            "/generate/nps/trend/report": "npstrend",
            "/generate/sms/delivery/statistics/report": "smsdelivery",
-           "/survey/email/delivery/status/report": "surveyemail"}
+           "/survey/email/delivery/status/report": "surveyemail",
+           "/generate/nps/report": "npsreport",
+           "/generate/tier/ranking/report": "tierranking",
+           "/generate/incomplete/surveys/report": "incompletesurvey"}
 
-reports_with_no_data = {"/generate/tier/ranking/report": "tierranking",
-                        "/generate/incomplete/surveys/report": "incompletesurvey"}
-
-reports_with_error = {"/generate/nps/report": "npsreport",
-                      "/generate/digest/report": "digest",
+reports_with_error = {"/generate/digest/report": "digest",
                       "/generate/account/statistics/report": "accountstatistics"}
 
 
@@ -88,12 +87,24 @@ def convert_data_into_file(data, report):
         df = pd.DataFrame.from_dict(test_tier)
         df.to_csv(file_path)
     elif report in "smsdelivery":
-        test_tier = data.get("sms_delivery_statistics")
-        df = pd.DataFrame.from_dict(test_tier)
+        sms_delivery = data.get("sms_delivery_statistics")
+        df = pd.DataFrame.from_dict(sms_delivery)
         df.to_csv(file_path)
     elif report in "surveyemail":
-        test_tier = data.get("survey_delivery_statistics")
-        df = pd.DataFrame.from_dict(test_tier)
+        survey_email = data.get("survey_delivery_statistics")
+        df = pd.DataFrame.from_dict(survey_email)
+        df.to_csv(file_path)
+    elif report in "npsreport":
+        nps_report = data.get("COPY Default-Tier")
+        df = pd.DataFrame.from_dict(nps_report)
+        df.to_csv(file_path)
+    elif report in "tierranking":
+        tier_ranking = data.get("tier_ranking_details")
+        df = pd.DataFrame.from_dict(tier_ranking)
+        df.to_csv(file_path)
+    elif report in "incompletesurvey":
+        incomplete_survey = data.get("incomplete_survey_details")
+        df = pd.DataFrame.from_dict(incomplete_survey)
         df.to_csv(file_path)
 
 
@@ -148,6 +159,16 @@ def get_data():
                        "action": "Download", "report_format": "json", "range_period": json.dumps(period),
                        "campaign_id": powerbi_config.campaign_id, "reports": "hierarchy",
                        "tier_data": [{"label": "All Tier", "value": powerbi_config.account_id}]}
+            elif v in "npsreport":
+                par = {"report_name": "NPS Report", "account_id": powerbi_config.account_id, "report_format": "json",
+                       "period": "All Time", "account_name": powerbi_config.accountname}
+            elif v in "tierranking":
+                par = {"report_name": "Ranking Report - Tier", "account_id": powerbi_config.account_id,
+                       "report_format": "json", "year": powerbi_config.year,
+                       "account_name": powerbi_config.accountname, "month":powerbi_config.month}
+            elif v in "incompletesurvey":
+                par = {"account_id": powerbi_config.account_id,"campaign_id":powerbi_config.campaign_id,
+                       "report_format": "json","range_period":json.dumps(period)}
             data = requests.get(url=URL, params=par, headers={"Authorization": access_token})
             data_json = data.json()
             convert_data_into_file(data_json, v)
